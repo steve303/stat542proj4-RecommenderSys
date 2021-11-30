@@ -1,7 +1,8 @@
 # stat542proj4
 
 resources:  
-https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html  
-https://liangfgithub.github.io/Rcode_W13_Movie_RS.nb.html  
-https://github.com/pspachtholz/BookRecommender  
-https://www.kaggle.com/philippsp/book-recommender-collaborative-filtering-shiny  
+data source:  https://grouplens.org/datasets/movielens/  
+prof's code:  https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html  
+prof's code:  https://liangfgithub.github.io/Rcode_W13_Movie_RS.nb.html  
+demo code:  https://github.com/pspachtholz/BookRecommender  
+demo code:  https://www.kaggle.com/philippsp/book-recommender-collaborative-filtering-shiny  
