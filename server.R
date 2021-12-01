@@ -1,3 +1,12 @@
+## server.R
+
+library(dplyr)
+
+# load functions
+source('functions/cf_algorithm.R') # collaborative filtering
+source('functions/similarity_measures.R') # similarity measures
+
+# define functions
 get_user_ratings = function(value_list) {
   dat = data.table(MovieID = sapply(strsplit(names(value_list), "_"), 
                                     function(x) ifelse(length(x) > 1, x[[2]], NA)),
@@ -18,13 +27,22 @@ colnames(movies) = c('MovieID', 'Title', 'Genres')
 movies$MovieID = as.integer(movies$MovieID)
 movies$Title = iconv(movies$Title, "latin1", "UTF-8")
 
+bayes_WR = readLines("https://raw.githubusercontent.com/pwodarz/CS598Proj4/main/WR_movies.dat")
+bayes_WR = strsplit(bayes_WR, split = "::", fixed = TRUE, useBytes = TRUE)
+bayes_WR = matrix(unlist(bayes_WR), ncol = 6, byrow = TRUE)
+bayes_WR = data.frame(bayes_WR, stringsAsFactors = FALSE)
+colnames(bayes_WR) = c("MovieID","Title","Genres","mean_rating","num_reviews","WR")
+bayes_WR$MovieID = as.integer(bayes_WR$MovieID)
+bayes_WR$WR = as.numeric(bayes_WR$WR)
+
+
 small_image_url = "https://liangfgithub.github.io/MovieImages/"
 movies$image_url = sapply(movies$MovieID, 
                           function(x) paste0(small_image_url, x, '.jpg?raw=true'))
 
 shinyServer(function(input, output, session) {
   
-  # show the books to be rated
+  # show the movies to be rated
   output$ratings <- renderUI({
     num_rows <- 20
     num_movies <- 6 # movies per row
@@ -75,16 +93,47 @@ shinyServer(function(input, output, session) {
         box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
             
             div(style = "text-align:center", 
-                a(img(src = movies$image_url[recom_result$MovieID[(i - 1) * num_movies + j]], height = 150))
+                a(img(src = movies[movies$MovieID == recom_result$MovieID[(i - 1) * num_movies + j],]$image_url[1], height = 150))
             ),
             div(style="text-align:center; font-size: 100%", 
-                strong(movies$Title[recom_result$MovieID[(i - 1) * num_movies + j]])
+                strong(movies[movies$MovieID == recom_result$MovieID[(i - 1) * num_movies + j],]$Title[1])
             )
             
         )        
       }))) # columns
     }) # rows
     
+  }) # renderUI function
+  
+  # Display the genre recommendation
+  output$genre_results = renderUI({
+    n = 10
+    top_movies = bayes_WR %>% filter(grepl(input$genre_select,Genres)) %>% arrange(desc(WR))
+    user_results = top_movies[1:n,]$mean_rating
+    user_predicted_ids = top_movies[1:n,]$MovieID
+    recom_result <- data.table(Rank = 1:10, 
+                                MovieID = user_predicted_ids, 
+                                Title = top_movies[1:n,]$Title, 
+                                Predicted_rating =  user_results)
+    
+    num_rows <- 2
+    num_movies <- 5
+    
+    
+    lapply(1:num_rows, function(i) {
+      list(fluidRow(lapply(1:num_movies, function(j) {
+        box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
+            
+            div(style = "text-align:center", 
+                a(img(src = movies[movies$MovieID == recom_result$MovieID[(i - 1) * num_movies + j],]$image_url[1], height = 150))
+            ),
+            div(style="text-align:center; font-size: 100%", 
+                strong(movies[movies$MovieID == recom_result$MovieID[(i - 1) * num_movies + j],]$Title[1])
+            )
+            
+        )        
+      }))) # columns
+    })
   }) # renderUI function
   
 }) # server function
