@@ -73,8 +73,7 @@ shinyServer(function(input, output, session) {
       user_results = (1:10)/10
       user_predicted_ids = 1:10
       recom_results <- data.table(Rank = 1:10, 
-                                  MovieID = movies$MovieID[user_predicted_ids], 
-                                  Title = movies$Title[user_predicted_ids], 
+                                  MovieID = user_predicted_ids, 
                                   Predicted_rating =  user_results)
       
     }) # still busy
@@ -113,7 +112,6 @@ shinyServer(function(input, output, session) {
     user_predicted_ids = top_movies[1:n,]$MovieID
     recom_result <- data.table(Rank = 1:10, 
                                 MovieID = user_predicted_ids, 
-                                Title = top_movies[1:n,]$Title, 
                                 Predicted_rating =  user_results)
     
     num_rows <- 2
