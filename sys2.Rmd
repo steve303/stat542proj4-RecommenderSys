@@ -1,0 +1,103 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(recommenderlab)
+library(Matrix)
+```
+
+```{r}
+#myurl = "https://liangfgithub.github.io/MovieData/"
+#ratings = read.csv(paste0(myurl, 'ratings.dat?raw=true'), 
+#                   sep = ':',
+#                   colClasses = c('integer', 'NULL'), 
+#                   header = FALSE)
+
+#get rating.dat file locally:
+ratings = read.csv("./data/ratings.dat", 
+                   sep = ':',
+                   colClasses = c('integer', 'NULL'), 
+                   header = FALSE)
+colnames(ratings) = c('UserID', 'MovieID', 'Rating', 'Timestamp')
+ratings$Timestamp = NULL
+```
+
+```{r}
+head(ratings)
+```
+construct realRatingMatrix
+
+```{r}
+i = paste0('u', ratings$UserID)
+j = paste0('m', ratings$MovieID)
+x = ratings$Rating
+
+tmp = data.frame("i"= i, "j" = j, "x" = x, stringsAsFactors = TRUE)
+```
+
+```{r}
+Rmat = sparseMatrix(as.integer(tmp$i), as.integer(tmp$j), x = tmp$x)  #?why as.integer() ???
+rownames(Rmat) = levels(tmp$i)
+colnames(Rmat) = levels(tmp$j)
+Rmat = new('realRatingMatrix', data = Rmat)
+```
+
+```{r}
+as(Rmat, "matrix")[1:10,1:10] #view partial matrix
+dim(as(Rmat, "matrix"))
+```
+
+Evaluation I
+Training Test Split
+
+
+```{r, cache=TRUE}
+esSplit = evaluationScheme(Rmat, method="cross-validation",
+                           train = 0.9, k=10, given = 3)
+```
+
+
+```{r, cache=TRUE}
+#see p.30 https://cran.r-project.org/web/packages/recommenderlab/vignettes/recommenderlab.pdf
+time_in = Sys.time()
+algorithms = list("random" = list(name = "Random", param = list(normalize = "Z-score")), 
+                  "ubcf" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 25)),
+                  "ibcf" = list(name = "IBCF", param = list(normalize = "Z-score", method = "Cosine", k = 25))
+                  )
+eval_ubcf = evaluate(esSplit, method = algorithms, type = "ratings" )
+time_out = Sys.time()
+```
+
+```{r}
+time_total = difftime(time_out, time_in, units = "mins")
+print(time_total)
+```
+
+
+```{r}
+plot(eval_ubcf, ylim = c(0,3))
+```
+```{r, cache=TRUE}
+time_in = Sys.time()
+algorithms_nn <- list("UBCF_10" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 10)),
+                   "UBCF_20" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 20)),
+                   "UBCF_40" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 40)),
+                   "UBCF_60" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 60)),                   
+                   "UBCF_80" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 80))
+                   )
+
+eval_ubcf_nn = evaluate(esSplit, method = algorithms_nn, type = "ratings" )
+time_out = Sys.time()
+tot_time_nn = difftime(time_out, time_in, units = "mins")
+print(tot_time_nn)
+plot(eval_ubcf_nn, ylim = c(0,6))
+```
+
+
+
