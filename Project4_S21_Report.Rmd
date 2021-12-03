@@ -123,6 +123,14 @@ We implemented this by storing the `joined` table as a file and referencing the 
 
 ## System II
 
+### Overview
+
+### Proposal I
+
+### Proposal II
+
+### Decision
+
 ## Resources  
 [Quora: What algorithm does IMDB use for ranking the movies on its site?](https://www.quora.com/What-algorithm-does-IMDB-use-for-ranking-the-movies-on-its-site?share=1)
 
