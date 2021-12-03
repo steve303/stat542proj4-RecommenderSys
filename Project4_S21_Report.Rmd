@@ -1,0 +1,135 @@
+---
+title: 'Project 4: Movie Recommendation'
+output:
+  html_document:
+    theme: readable
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+date: "Fall 2021"
+---
+
+```{r include=FALSE}
+library(dplyr)
+```
+
+
+## Team Members and Contributions (all MCS)
+Steve Su (steven36)  
+Pierson Wodarz (wodarz2)  
+
+Steve and Pierson both built several models for each system. For system II, we built models which attempted to achieve the highest performance. Both reviewed the work of each other for understanding, corrections, and potential improvements. Feedback was provided to each other over calls, while updates to the parts were made by the respective team members.  
+
+## Introduction
+
+### Data
+
+## System I
+
+### Overview
+For System I we aim to construct a recommendation based on genres. In particular, we look to recommend movies to the user based on a selected genre. For both proposed approaches, we recommend movies to the user in the same genre as the selected genre. 
+
+### Proposal I
+For the first genre recommendation system, we look to select recommend the 'top' movies in the genre which the user has selected. To do so, we first need to make two clarifications: 
+
+1. What is meant by 'top'?
+2. How do we define the genres for movies with multiple listed genres?
+
+We define 'top' as the weighted rating (WR), which is a true Bayesian estimate. The weighted ranking is defined as follows:
+
+$$WR = R \frac{v}{v+m} + C\frac{m}{v+m}$$
+
+Where:
+
+  * $R$ = mean review rating for the movie
+  * $v$ = number of reviews for the movie
+  * $m$ = vote threshold variable (controls weight of reviews with number of reviews above/below threshold)
+  * $C$ = mean review rating across all movies
+  
+What we are attempting to accomplish by using this formula is to obtain the ratings of movies according to their Bayesian estimate. This takes into account the number of reviews as well as the ratings in those reviews. Consider the following example reviews:
+
+  * Movie A: 5 Stars, 1 review
+  * Movie B: 4.3 Stars, 1,000 reviews
+  
+In this case, we are likely to feel/believe the rating for Movie B is accurate and representative, while we have much less certainty about the rating of Movie A given that it only has 1 review. To account for this we use the calculation for $WR$. This calculates a weighted rating for the movie, weighing both the mean rating for the movie, as well as the number of reviews received by the movie. 
+
+To implement this algorithm we perform the following: 
+
+1. First we load the data and transform for our purposes. 
+```{r}
+myurl = "https://liangfgithub.github.io/MovieData/"
+movies = readLines(paste0(myurl, 'movies.dat?raw=true'))
+movies = strsplit(movies, split = "::", fixed = TRUE, useBytes = TRUE)
+movies = matrix(unlist(movies), ncol = 3, byrow = TRUE)
+movies = data.frame(movies, stringsAsFactors = FALSE)
+colnames(movies) = c('MovieID', 'Title', 'Genres')
+movies$MovieID = as.integer(movies$MovieID)
+movies$Title = iconv(movies$Title, "latin1", "UTF-8")
+
+ratings = read.csv(paste0(myurl, 'ratings.dat?raw=true'), 
+                   sep = ':',
+                   colClasses = c('integer', 'NULL'), 
+                   header = FALSE)
+colnames(ratings) = c('UserID', 'MovieID', 'Rating', 'Timestamp')
+ratings$Timestamp = NULL
+```
+
+2. We then aggregate the data based on average rating per movie and count of reviews per movie. 
+```{r}
+aggregate = data.frame(ratings %>% group_by(MovieID) %>% summarise(mean_rating = mean(Rating), num_reviews = n()))
+head(aggregate)
+```
+
+3. Then we calculate the WR for each movie using the above definition. 
+
+In this case we define $m$ = 100 since we can see that a significant volume of movies have a number of ratings over 100, while some have less than 100. But in our instinctive impulse is to weigh those with 0 or less than 100 less. 
+```{r echo=FALSE}
+hist(table(ratings$MovieID), 
+     xlim=c(0, 3000), 
+     breaks = 300,
+     main = "Histogram of number of ratings",
+     xlab = "Rating count per individual movie"
+     )
+```
+
+Additionally, we aggregate over all genres. This is for ease of implementation. In particular, we assume that if something is rated highly across genres, it will be rated highly within genres. This is also a good approach as we would have to tailor $m$ to account for the number of reviews for movies within each genre, but by holding $m$ constant across genres we achieve higher consistency and ensure that WR doesn't move towards C for those movies in particular genres with a low number of ratings. 
+
+```{r}
+mean_C = mean(ratings$Rating)
+min_rev = 100
+aggregate$WR = with(aggregate, (mean_rating * (num_reviews / (num_reviews + min_rev))) + (mean_C * (min_rev / (num_reviews + min_rev))))
+head(aggregate)
+```
+
+4. Finally, we join this with our movies database.
+```{r}
+joined = merge(movies, aggregate, all = FALSE, by="MovieID")
+head(joined)
+```
+
+To make a prediction for a particular genre we can grab the top N movies ordered by WR. For example, the top 10 Children's movies could be determined as follows:
+```{r}
+result = joined %>% filter(grepl("Children's",Genres)) %>% arrange(desc(WR))
+result[1:10,]
+```
+
+### Proposal II
+
+### Decision
+Ultimately we decided to go with Proposal I as the weighted rating made the most intuitive sense for presenting the 'top' movies within a certain genre. It makes sense that when a user selects a genre that we would present the 'top' movies within that genre. In this case, the weighted rating returns those movies which could be considered 'top' by balancing the number of reviews with the ratings for the movies within the genre. 
+
+We implemented this by storing the `joined` table as a file and referencing the file in our Shiny app to make the predictions based on the user-selected genre and the weighted rankings for movies which fall into the selected genre. 
+
+## System II
+
+## Resources  
+[Quora: What algorithm does IMDB use for ranking the movies on its site?](https://www.quora.com/What-algorithm-does-IMDB-use-for-ranking-the-movies-on-its-site?share=1)
+
+
+
+
+
+
+
+
