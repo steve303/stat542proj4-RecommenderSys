@@ -47,7 +47,9 @@ Where:
   * $m$ = vote threshold variable (controls weight of reviews with number of reviews above/below threshold)
   * $C$ = mean review rating across all movies
   
-What we are attempting to accomplish by using this formula is to obtain the ratings of movies according to their Bayesian estimate. This takes into account the number of reviews as well as the ratings in those reviews. Consider the following example reviews:
+Since we are recommending by genre, any movie which is listed under the selected genre will be considered for recommendation. 
+
+ we are attempting to accomplish by using this formula is to obtain the ratings of movies according to their Bayesian estimate. This takes into account the number of reviews as well as the ratings in those reviews. Consider the following example reviews:
 
   * Movie A: 5 Stars, 1 review
   * Movie B: 4.3 Stars, 1,000 reviews
