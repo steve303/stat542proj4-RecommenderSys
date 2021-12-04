@@ -118,8 +118,25 @@ result[1:10,]
 
 ### Proposal II
 
+For the second genre recommendation system, we seek to suggest those movies which are 'popular' in a given genre. To do so, we first need to provide a definition of 'popular'. Colloquially speaking, we associate 'popular' with many views or reviews. The number of reviews functions as a good proxy for a movies popularity, as the assumption is that a movie which is popular will have many reviews as it is being seen and talked about. We note that just because a movie is 'popular' (high review count) does not mean that it is good (high average rating). 
+
+Therefore, the popularity of a movie within a given genre is determined by the number of reviews for the movies within that genre. Similar to Proposal II, we will consider a movie for each genre it is associated with, so the same movie may be the most popular movie for the multiple genres with which it is associated. Reviewing the histogram presented in Proposal I, we see that a few movies are very popular and have a very high number of reviews.
+
+To implement the system, we can utilize the `joined` table which contains the count of reviews for each movie. 
+```{r}
+head(joined)
+```
+
+To select the top N movies for a given category, we then filter by category, and sort by count, choosing the top N movies from the table. 
+```{r}
+result = joined %>% filter(grepl("Children's",Genres)) %>% arrange(desc(num_reviews))
+result[1:10,]
+```
+
+We see that this produces a different ranking and set of Top 10 recommendations compared to Proposal I. 
+
 ### Decision
-Ultimately we decided to go with Proposal I as the weighted rating made the most intuitive sense for presenting the 'top' movies within a certain genre. It makes sense that when a user selects a genre that we would present the 'top' movies within that genre. In this case, the weighted rating returns those movies which could be considered 'top' by balancing the number of reviews with the ratings for the movies within the genre. 
+Ultimately we decided to go with Proposal I as the weighted rating made the most intuitive sense for presenting the 'top' movies within a certain genre. It makes sense that when a user selects a genre that we would present the 'top' movies within that genre. We don't want to present 'popular' movies as suggested in Proposal II, as the popular movies may not be well rated. For a user looking for recommendation, the assumption is that they would want to watch a movie which is both good and popular for that genre. In this case, the weighted rating returns those movies which could be considered 'top' by balancing the number of reviews with the ratings for the movies within the genre. 
 
 We implemented this by storing the `joined` table as a file and referencing the file in our Shiny app to make the predictions based on the user-selected genre and the weighted rankings for movies which fall into the selected genre. 
 
