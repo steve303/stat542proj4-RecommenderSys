@@ -20,7 +20,7 @@ rating_rec = tabItem(
   includeCSS("css/movies.css"),
   
   fluidRow(
-    box(width = 12, title = "Step 1: Rate as many Movies as possible", status = "info", solidHeader = TRUE, collapsible = TRUE,
+    box(width = 12, title = "Step 1: Rate 10 or More Movies For Best Results", status = "info", solidHeader = TRUE, collapsible = TRUE,
         div(class = "rateitems", uiOutput('ratings'))
     )
   ),
