@@ -22,8 +22,10 @@ Pierson Wodarz (wodarz2)
 Steve and Pierson both built several models for each system. For system II, we built models which attempted to achieve the highest performance. Both reviewed the work of each other for understanding, corrections, and potential improvements. Feedback was provided to each other over calls, while updates to the parts were made by the respective team members.  
 
 ## Introduction
+The purpose of this project is to build an app which can give users recommended movies.  System one outputs recommended movies based on the user's desired genre.  System two gives the user recommended movies based on their movie ratings.  The app was built using the Shiny platform and the recommender algorithms used R's recommenderlab library.  The link to the app can be found here [Movie Recommender](https://steve303.shinyapps.io/RecommenderApp/).
 
 ### Data
+The data set used in this project was sourced from [MovieLens](https://grouplens.org/datasets/movielens/). It has about 1 million anonymous ratings of approximately 3,900 movies made by 6,040 MovieLens users.  Movies are rated on a score between 1-5.   
 
 ## System I
 
@@ -140,42 +142,46 @@ Ultimately we decided to go with Proposal I as the weighted rating made the most
 
 We implemented this by storing the `joined` table as a file and referencing the file in our Shiny app to make the predictions based on the user-selected genre and the weighted rankings for movies which fall into the selected genre. 
 
-## System II
-
-`Provide a short introduction of those algorithms, then pick a metric, e.g., RMSE, to evaluate the prediction performance of the algorithms, over 10 iterations. In each iteration, create a training and test split of the MovieLens 1M data, train a recommender system on the training data and record prediction accuracy/error on the test data. Report the results via a graph or a table.`
-
-    * There is no accuracy benchmark; the purpose here is to demonstrate that you know how to build a collaborative recommender system.
-    * You can decide the percentage for training/test data.
-    * It'll be great if you want to tune the model parameters, but it's fine to just fix them at some values. Include a description of the meaning of each parameter and the value you have used throughout the simulation study.
-
- 
-Include the necessary technical details. For example, suppose you study the user-based or item-based CF.
-
-    * Will you normalize the rating matrix? If so, which normalization option do you use?
-    * What's the nearest neighborhood size you use?
-    * Which similarity metric do you use?
-    * If you say prediction is based on a "weighted average", then explain what weights you use.
-    * Will you still have missing values after running the algorithm? If so, how do you handle those missing values?
+## System II  
     
 ### Overview  
 
-For this study we ran both UBCF (user based collaberative filtering) and IBCF (item based collaborative filtering) algorithms and compared them to a random selection algorithm.  Both algorithms require a collection of user movie ratings to make predictions.  This was sourced from MovieLens and contains roughly 1 million ratings of 3,900 movies by 6040 users. Having a sizeable database is important for making good rating predictions.  Without it we will run into a cold start issue resulting in sub par predictions because we don't have sufficeint data to base our recommendations on. Our goal is to rate each algorithm using RMSE as a metric and use the best algorithm for our reommender app.  
+For this study we ran both UBCF (user based collaborative filtering) and IBCF (item based collaborative filtering) algorithms and compared them to a random selection algorithm.  Both algorithms require a collection of user movie ratings to make predictions.  This was sourced from MovieLens and contains roughly 1 million ratings of 3,900 movies by 6040 users. Having a sizable database is important for making good rating predictions.  Without it we will run into a cold start issue resulting in sub par predictions because we don't have sufficient data to base our recommendations on. Our goal is to rate each algorithm using RMSE as a metric and use the best algorithm for our recommender app.  
 
 ### Proposal I  
-Both algorithms in system two calculate a similarity metric to make recommendations but differ in how it is determined.  UBCF calculates similarity between each user in the database with the active user. The active user is the one we wish to give recommendations to. The algorithm is similar to KNN (k nearest neighbors) where k is a chosen hyper-parameter representing the number of users in the neighborhood.  The algorithm finds the k nearest neighbors (based on similarity) and assumes that these users will like/dislike the same movies.  Based on this assumption, recommendations for the active user are calculated by taking the average ratings of the k users in the neighborhood.  Z score normalization was used to reduce bias in how users rated movies.  Mathematically, each rating for the active user is described by:
+Both algorithms in system two calculate a similarity metric to make recommendations but differ in how it is determined.  UBCF calculates similarity between each user in the database with the active user. The active user is the one we wish to give recommendations to. The algorithm is similar to KNN (k nearest neighbors) where k is a chosen hyper-parameter representing the number of users in the neighborhood.  The algorithm finds the k nearest neighbors (based on similarity) and assumes that these users will like/dislike the same movies.  Based on this assumption, recommendations for the active user are calculated by taking the average ratings of the k users in the neighborhood.  Z score normalization was used to reduce bias in how users rated movies.  Mathematically, each predicted rating for the active user is described by:  
 
+$$R{a,j} = \frac{1}{|N(a)|}\sum_{i\in N(a)} R{i,j}$$
+where: 
+  
+  * $R{a,j}$ = predicted rating of movie j by active user
+  * $N(a)$ = neighborhood of users assigned to active user
+  * $R{i,j}$ = rating of movie j by user i  
+  
+Note, if a movie is not rated by a user, having a value NA, and is in the neighborhood of the active user, then that rating is ignored.    
+  
 ### Proposal II  
-In IBCF, similarity is based on items instead of users.  The assumption is that users will prefer items that are similar to other items they like.  A n x n similarity matrix is constructed and can be computed offline before the active user makes a query with the app thereby reducing the computation load.  To simplify things further, only the top k similarities need to be stored.  The recommendation is computed by taking a weighted average of the active user's ratings where the weights are the similarities between the k database users and the active user's ratings.  As in UBCF, we also normalized users ratings with Z score method.  The rating prediction can be described by the following equation:
-
+In IBCF, similarity is based on items instead of users.  The assumption is that users will prefer items that are similar to other items they like.  A n x n similarity matrix is constructed and can be computed offline before the active user makes a query with the app thereby reducing the computation load.  To simplify things further, only the top k similarities need to be stored.  The recommendation is computed by taking a weighted average of the active user's ratings where the weights are the similarities between the k database users and the active user's ratings.  As in UBCF, we also normalized users ratings with Z score method.  The rating prediction can be described by the following equation:  
+$$R{a,i} = \frac{1}{\sum_{j\in Set(i) \cap [l;R{a,l}\ !=\ ?]} S{i,j}} \sum_{j\in Set(i) \cap [l;R{a,l}\ !=\ ?]}S{i,j}*R{a,j}$$
+where: 
+  
+  * $R{a,i}$ = predicted rating of movie i by active user
+  * $S{i,j}$ = similarity of movie i to movie j
+  * $R{a,j}$ = rating of movie j by active user
+  * $Set(i)$ = set of movies which are in the neighborhood of movie i
+  
 ### Decision
 
-To evaluate the two algorithms we performed a 10 fold cross validation where in each fold 90% of the data was used for training and the remaining 10% was used for test.  RMSE was calculated for each fold.  Besides the UBCF and IBCF, a random selection algorithm was run for reference.  
+To evaluate the two algorithms we performed a 10 fold cross validation where in each fold 80% of the data was used for training and the remaining 20% was used for test.  RMSE was calculated for each fold.  Besides the UBCF and IBCF, a random selection algorithm was run for reference.  
 
 Some of the parameters which were used for both UBCF and IBCF:  
     
   * k = 25, 
+  * given = 3
   * normalize = Z-score, 
-  * method = Cosine (similarity metric).
+  * method = Cosine (similarity metric).  
+  
+The "given" parameter specifies how many movies are given for evaluation for each observation.  The code to perform the evaluations are given below.    
 
 ```{r, message=FALSE}
 library(recommenderlab)
@@ -207,8 +213,9 @@ Rmat = new('realRatingMatrix', data = Rmat)
 ```
 
 ```{r, cache=TRUE, results='hide'}
+set.seed(0303)
 esSplit = evaluationScheme(Rmat, method="cross-validation",
-                           train = 0.9, k=10, given = 3)
+                           train = 0.8, k=10, given = 3)
 ```
 
 ```{r, cache=TRUE, results='hide'}
@@ -223,6 +230,11 @@ time_out = Sys.time()
 ```   
     
 ```{r, include=FALSE}
+tot_time = difftime(time_out, time_in, units = "mins")
+print(tot_time)
+``` 
+
+```{r, include=FALSE}
 
 table_random = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
 table_ubcf = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
@@ -235,70 +247,79 @@ for (i in 1:10){
 
 ```
 <br>
-*Table 1. RMSE Values for Each Fold*
+*Table 1. RMSE Values for Each Fold and Each Algorithm*
 ```{r, echo=FALSE}
-knitr::kable(cbind(1:10, table_random$RMSE, table_ubcf$RMSE, table_ibcf$RMSE), col.names = c("Fold", "Random","UBCF", "IBCF"))
+df = cbind(c(1:10, "Ave."), 
+           round(c(table_random$RMSE, mean(table_random$RMSE)), 2), 
+           round(c(table_ubcf$RMSE, mean(table_ubcf$RMSE)), 2), 
+           round(c(table_ibcf$RMSE, mean(table_ibcf$RMSE)), 2))
+
+knitr::kable(df, col.names = c("Fold", "Random","UBCF", "IBCF"))
 ```
 *Figure 1. Average RMSE Values for Random, UBCF and IBCF Algorithms*
 ```{r, echo=FALSE}
 
 barplot( height = c(mean(table_random$RMSE),mean(table_ubcf$RMSE), mean(table_ibcf$RMSE)), 
          names.arg = c("Random","UBCF", "IBCF"), main = "10 Fold Average RMSE", ylab = "error")
+
 ```
     
     
-The UBCF turned out to have the lowest RMSE.  Surprisingly the random algorithm did not perform significantly worse than both UBCF and IBCF.  This suggests that our UBCF algorithm could use some improvement.     
+The UBCF turned out to have the lowest RMSE, a value of 1.22.  Surprisingly the random algorithm performed similarly to the  IBCF algorithm; their scores were both 1.47 which is not too far off from the UBCF's score .  This suggests that our UBCF algorithm could use some improvement.     
 
-In an attempt to improve our algorithm, we performed an optimization to specify k.  However, the optimization showed that we were already using close to the optimum value (figure 2).
+In an attempt to improve our algorithm, we performed an optimization to specify k.  Slight improvement could be made by increasing k = 75, but the improvement was less than 1% compared to k = 25. (figure 2).
 
-```{r, cache=TRUE, results='hide'}
-time_in = Sys.time()
-algorithms_nn <- list("UBCF_20" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 20)),
-                   "UBCF_40" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 40)),
-                   "UBCF_60" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 60)),
-                   "UBCF_80" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 80)))
 
-eval_ubcf_nn = evaluate(esSplit, method = algorithms_nn, type = "ratings" )
-time_out = Sys.time()
+
+```{r optimize01, cache=TRUE, results='hide'}
+
+algorithms_nn01 <- list("UBCF_50" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 50)),
+                   "UBCF_75" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 75)),
+                   "UBCF_100" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 100)))
+
+eval_ubcf_nn01 = evaluate(esSplit, method = algorithms_nn01, type = "ratings" )
+
 ```
 
-```{r, include=FALSE}
-tot_time_nn = difftime(time_out, time_in, units = "mins")
-print(tot_time_nn)
-``` 
 
 ```{r ,eval=TRUE,include=FALSE}
 
-table_n20 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
-table_n40 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
-table_n60 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
-#table_n80 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n50 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n75 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n100 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+
 for (i in 1:10){
-  table_n20[i,] = eval_ubcf_nn[[1]]@results[[i]]@cm
-  table_n40[i,] = eval_ubcf_nn[[2]]@results[[i]]@cm
-  table_n60[i,] = eval_ubcf_nn[[3]]@results[[i]]@cm
- # table_n80[i,] = eval_ubcf_nn[[4]]@results[[i]]@cm
+  table_n50[i,] = eval_ubcf_nn01[[1]]@results[[i]]@cm
+  table_n75[i,] = eval_ubcf_nn01[[2]]@results[[i]]@cm
+  table_n100[i,] = eval_ubcf_nn01[[3]]@results[[i]]@cm
 }
 
 ```
 
 <br>
-*Figure 2. Average UBCF RMSE Values for k=20, 40, 60, 80*
+*Figure 2. Average UBCF RMSE Values for k = 25, 50, 75, 100*
 ```{r, eval=TRUE, echo=FALSE}
 
-barplot( height = c(mean(table_n20$RMSE),mean(table_n40$RMSE), mean(table_n60$RMSE)), 
-         names.arg = c("k=20","k=40", "k=60"), main = "Average RMSE", ylab = "error")
+barplot( height = c(mean(table_ubcf$RMSE), mean(table_n50$RMSE),mean(table_n75$RMSE), mean(table_n100$RMSE[-8])), 
+         names.arg = c("k=25", "k=50","k=75", "k=100"), main = "10 Fold Average RMSE - K Optimization", ylab = "error")
 ```
-    
+  
+Even though UBCF performed better than IBCF, UBCF has some drawbacks.  These include, the whole data base has to be stored in memory and the similarity computation between each user in the data base and the active user cannot be done offline.  Just to compute similarity, the complexity will be O(n*m) where n is the number of users and m is the number of movies.  For a huge database this can be big strain our app.  To minimize this bottle neck we borrowed code from [Spachtholz](https://github.com/pspachtholz/BookRecommender).  It requires additional R scripts, cf_algorithm.R and similarity_measures.R which make computation more efficient by optimizing similarity calculations for sparse matrices.  The source can be found here, [Smartcat](https://smartcat.io/blog/data-science/improved-r-implementation-of-collaborative-filtering/). 
 
-The two main problems utilizing UBCF which KNN also share, is that the whole user data base has to be stored in memory and that similarity computation of each user to the active user cannot be done offline.  Just to compute similarity the complexity will be O(k*m) where k is the number of users and m is the number of movies.  For a huge database this can strain our app.  To minimize this bottle neck we borrowed code from ... to reduce the computation time.  The required R scripts are: cf_algorithm.R and similarity_measures.R which still employ R's recommenderlab's library but makes calculating similarity more efficient.          
+## Summary
+In the end our app was successfully deployed without much delay predicting recommendations.  There are several areas which could be improved for system two.  These include, providing more movie choices to rate, allowing the user to apply a filter, i.e. year, director.  Since our chosen UBCF algorithm did not perform significantly better than the random selection algorithm, this suggests there is room for improvement.  One idea is to use user profile data such as age, sex, profession to create more representative similarity scores between users.
     
     
 
 ## Resources  
-[Quora: What algorithm does IMDB use for ranking the movies on its site?](https://www.quora.com/What-algorithm-does-IMDB-use-for-ranking-the-movies-on-its-site?share=1)
-
-
+1.  [Quora: What algorithm does IMDB use for ranking the movies on its site?](https://www.quora.com/What-algorithm-does-IMDB-use-for-ranking-the-movies-on-its-site?share=1)
+2.  [demo code kaggle Spachtholz](https://www.kaggle.com/philippsp/book-recommender-collaborative-filtering-shiny)  
+3.  [smartcat code](https://smartcat.io/blog/data-science/improved-r-implementation-of-collaborative-filtering/)
+4.  [data source movielens](https://grouplens.org/datasets/movielens/)
+5.  [prof's code EDA](https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html)  
+6.  [prof's code recommender](https://liangfgithub.github.io/Rcode_W13_Movie_RS.nb.html)  
+7.  [git demo code Spachtolz](https://github.com/pspachtholz/BookRecommender)  
+8.  [recommenderlab Hahsler](https://cran.r-project.org/web/packages/recommenderlab/vignettes/recommenderlab.pdf)
 
 
 
