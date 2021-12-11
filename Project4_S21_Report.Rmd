@@ -158,7 +158,7 @@ where:
   * $N(a)$ = neighborhood of users assigned to active user
   * $R{i,j}$ = rating of movie j by user i  
   
-Note, if a movie is not rated by a user, having a value NA, and is in the neighborhood of the active user, then that rating is ignored.    
+Note, we chose to perform a non-weighted approach to calculate ratings.  This will eliminate the possibility that the denominator will be zero if the similarity of the active user is zero in relation all other users in the neighborhood. 
   
 ### Proposal II  
 In IBCF, similarity is based on items instead of users.  The assumption is that users will prefer items that are similar to other items they like.  A n x n similarity matrix is constructed and can be computed offline before the active user makes a query with the app thereby reducing the computation load.  To simplify things further, only the top k similarities need to be stored.  The recommendation is computed by taking a weighted average of the active user's ratings where the weights are the similarities between the k database users and the active user's ratings.  As in UBCF, we also normalized users ratings with Z score method.  The rating prediction can be described by the following equation:  
@@ -181,14 +181,18 @@ Some of the parameters which were used for both UBCF and IBCF:
   * normalize = Z-score, 
   * method = Cosine (similarity metric).  
   
-The "given" parameter specifies how many movies are given for evaluation for each observation.  The code to perform the evaluations are given below.    
-
+The "given" parameter specifies how many movies are given for evaluation for each observation.  The code to perform the evaluations are given below.  
+<br>
+*Evaluation Code of the Three Algorithms*
 ```{r, message=FALSE}
 library(recommenderlab)
 library(Matrix)
 ```
 
 ```{r,results='hide'}
+#data source:
+#myurl = "https://liangfgithub.github.io/MovieData/ratings.dat?raw=true"
+
 #get rating.dat file locally:
 ratings = read.csv("./data/ratings.dat", 
                    sep = ':',
@@ -222,7 +226,7 @@ esSplit = evaluationScheme(Rmat, method="cross-validation",
 #see p.30 https://cran.r-project.org/web/packages/recommenderlab/vignettes/recommenderlab.pdf
 time_in = Sys.time()
 algorithms = list("random" = list(name = "Random", param = list(normalize = "Z-score")), 
-                  "ubcf" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 25)),
+                  "ubcf" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 25)),
                   "ibcf" = list(name = "IBCF", param = list(normalize = "Z-score", method = "Cosine", k = 25))
                   )
 eval_ubcf = evaluate(esSplit, method = algorithms, type = "ratings" )
@@ -234,7 +238,7 @@ tot_time = difftime(time_out, time_in, units = "mins")
 print(tot_time)
 ``` 
 
-```{r, include=FALSE}
+```{r, include=TRUE}
 
 table_random = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
 table_ubcf = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
@@ -248,7 +252,7 @@ for (i in 1:10){
 ```
 <br>
 *Table 1. RMSE Values for Each Fold and Each Algorithm*
-```{r, echo=FALSE}
+```{r}
 df = cbind(c(1:10, "Ave."), 
            round(c(table_random$RMSE, mean(table_random$RMSE)), 2), 
            round(c(table_ubcf$RMSE, mean(table_ubcf$RMSE)), 2), 
@@ -256,6 +260,7 @@ df = cbind(c(1:10, "Ave."),
 
 knitr::kable(df, col.names = c("Fold", "Random","UBCF", "IBCF"))
 ```
+<br>
 *Figure 1. Average RMSE Values for Random, UBCF and IBCF Algorithms*
 ```{r, echo=FALSE}
 
@@ -267,43 +272,68 @@ barplot( height = c(mean(table_random$RMSE),mean(table_ubcf$RMSE), mean(table_ib
     
 The UBCF turned out to have the lowest RMSE, a value of 1.22.  Surprisingly the random algorithm performed similarly to the  IBCF algorithm; their scores were both 1.47 which is not too far off from the UBCF's score .  This suggests that our UBCF algorithm could use some improvement.     
 
-In an attempt to improve our algorithm, we performed an optimization to specify k.  Slight improvement could be made by increasing k = 75, but the improvement was less than 1% compared to k = 25. (figure 2).
+In an attempt to improve our algorithm, we performed an optimization to specify k.  Increasing k from 25 to 200 lowered the RMSE by 7% from 1.216 to 1.131, respectively, but further increases showed little improvement, roughly 1% (figure 2).  The evaluation code is shown below.  
 
-
-
+<br>
+*k Value Optimiztion Code*
 ```{r optimize01, cache=TRUE, results='hide'}
 
-algorithms_nn01 <- list("UBCF_50" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 50)),
-                   "UBCF_75" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 75)),
-                   "UBCF_100" = list(name = "UBCF", param = list(normalize = "Z-score", method = "Cosine", nn = 100)))
+algorithms_nn01 <- list("UBCF_100" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 100)),
+                   "UBCF_200" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 200)),
+                   "UBCF_600" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 600)))
 
 eval_ubcf_nn01 = evaluate(esSplit, method = algorithms_nn01, type = "ratings" )
 
 ```
 
 
-```{r ,eval=TRUE,include=FALSE}
+```{r ,eval=TRUE,include=TRUE}
 
-table_n50 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
-table_n75 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
 table_n100 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n200 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n600 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
 
 for (i in 1:10){
-  table_n50[i,] = eval_ubcf_nn01[[1]]@results[[i]]@cm
-  table_n75[i,] = eval_ubcf_nn01[[2]]@results[[i]]@cm
-  table_n100[i,] = eval_ubcf_nn01[[3]]@results[[i]]@cm
+  table_n100[i,] = eval_ubcf_nn01[[1]]@results[[i]]@cm
+  table_n200[i,] = eval_ubcf_nn01[[2]]@results[[i]]@cm
+  table_n600[i,] = eval_ubcf_nn01[[3]]@results[[i]]@cm
 }
 
 ```
 
-<br>
-*Figure 2. Average UBCF RMSE Values for k = 25, 50, 75, 100*
-```{r, eval=TRUE, echo=FALSE}
 
-barplot( height = c(mean(table_ubcf$RMSE), mean(table_n50$RMSE),mean(table_n75$RMSE), mean(table_n100$RMSE[-8])), 
-         names.arg = c("k=25", "k=50","k=75", "k=100"), main = "10 Fold Average RMSE - K Optimization", ylab = "error")
+
+```{r , optimize05, cache=TRUE, results='hide'}
+
+algorithms_nn05 <- list("UBCF_1000" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 1000)),
+                   "UBCF_4000" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 4000)),
+                   "UBCF_6000" = list(name = "UBCF", param = list(weighted = FALSE, normalize = "Z-score", method = "Cosine", nn = 6000)))
+
+eval_ubcf_nn05 = evaluate(esSplit, method = algorithms_nn05, type = "ratings" )
+
 ```
-  
+
+```{r, eval=TRUE, include=TRUE}
+table_n1000 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n4000 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+table_n6000 = data.frame("RMSE" = rep(0, 10), "MSE" = rep(0,10), "MAE"= rep(0,10))
+
+for (i in 1:10){
+  table_n1000[i,] = eval_ubcf_nn05[[1]]@results[[i]]@cm
+  table_n4000[i,] = eval_ubcf_nn05[[2]]@results[[i]]@cm
+  table_n6000[i,] = eval_ubcf_nn05[[3]]@results[[i]]@cm 
+}
+c(mean(table_ubcf$RMSE),mean(table_n100$RMSE), mean(table_n200$RMSE), mean(table_n1000$RMSE),mean(table_n4000$RMSE), mean(table_n6000$RMSE))
+```
+<br>
+*Figure 2. Average UBCF RMSE Values For K values*
+
+```{r, echo=TRUE}
+barplot( height = c(mean(table_ubcf$RMSE), mean(table_n100$RMSE), mean(table_n200$RMSE), mean(table_n600$RMSE), mean(table_n1000$RMSE),mean(table_n4000$RMSE), mean(table_n6000$RMSE)), 
+         names.arg = c("k=25", "k=100", "k=200", "k=600", "k=1000", "k=4000", "k=6000"), main = "10 Fold Average RMSE - K Optimization", ylab = "error")
+
+```
+
 Even though UBCF performed better than IBCF, UBCF has some drawbacks.  These include, the whole data base has to be stored in memory and the similarity computation between each user in the data base and the active user cannot be done offline.  Just to compute similarity, the complexity will be O(n*m) where n is the number of users and m is the number of movies.  For a huge database this can be big strain our app.  To minimize this bottle neck we borrowed code from [Spachtholz](https://github.com/pspachtholz/BookRecommender).  It requires additional R scripts, cf_algorithm.R and similarity_measures.R which make computation more efficient by optimizing similarity calculations for sparse matrices.  The source can be found here, [Smartcat](https://smartcat.io/blog/data-science/improved-r-implementation-of-collaborative-filtering/). 
 
 ## Summary
