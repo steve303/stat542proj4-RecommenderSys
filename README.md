@@ -1,4 +1,4 @@
-# Building a Movie Recommder App - Algorithm Selection and App Implementation using R's Shiny Platform
+# Building a Movie Recommender App - Algorithm Selection and App Implementation using R's Shiny Platform
 
 # Objectives
 1) Evaluate and select a machine learning algorithm best suited for a toy movie recommender system
