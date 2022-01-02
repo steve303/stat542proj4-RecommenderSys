@@ -1,5 +1,13 @@
-# stat542proj4
+# Building a Movie Recommder App - Algorithm Selection and App Implementation using R's Shiny Platform
 
+# Objectives
+1) Evaluate and select a machine learning algorithm best suited for a toy movie recommender system
+2) Fully implement the algorithm into a functional web based app using publically available platforms
+
+[technical report and references](https://steve303.github.io/stat542proj4/Project4_S21_Report.html)  
+[movie recommender app](https://steve303.shinyapps.io/RecommenderApp/)
+
+# Data Source  
 **MovieLens 1M Dataset**
 - The dataset contains about 1 million anonymous ratings of approximately 3,900 movies made by 6,040 MovieLens users who joined MovieLens in 2000.
 - Check some explanatory data analysis we have done:
