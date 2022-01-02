@@ -5,13 +5,6 @@
 - Check some explanatory data analysis we have done:
 \[[Rcode_W13_Movie_EDA](https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html)\] \[[Rcode_W13_Movie_RS](https://liangfgithub.github.io/Rcode_W13_Movie_RS.nb.html)\]
 
-**What to Submit**
-- An **R/Python Markdown file in HTML** or a link to such a file, containing all necessary code to reproduce the reported results. No page limit.
-- A web link to a **movie recommendation app**, e.g., Shiny app, built by your team. You can share with us the link to your source code, or submit a copy of your code as one zip file on Coursera/Canvas
-
-**HTML Markdown File (5pt)**
-
-It should contain the following two components.
 - **System I**: recommendation based on genres. Suppose you know the user's favorite genre. How would you recommend movies to him/her?
   &nbsp;
   Propose **two** recommendation schemes along with all necessary technical details.
