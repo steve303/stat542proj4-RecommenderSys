@@ -1,5 +1,5 @@
 ---
-title: 'Project 4: Movie Recommendation'
+title: 'Movie Recommendation App - Algorithm Selection and Web App Implementation'
 output:
   html_document:
     theme: readable
@@ -7,7 +7,7 @@ output:
     toc_float: yes
   word_document:
     toc: yes
-date: "Fall 2021"
+date: "yr 2021"
 ---
 
 ```{r include=FALSE}
@@ -15,11 +15,10 @@ library(dplyr)
 ```
 
 
-## Team Members and Contributions (all MCS)
-Steve Su (steven36)  
-Pierson Wodarz (wodarz2)  
-
-Steve and Pierson both built several models for each system. For system II, we built models which attempted to achieve the highest performance. Both reviewed the work of each other for understanding, corrections, and potential improvements. Feedback was provided to each other over calls, while updates to the parts were made by the respective team members.  
+## Authors
+Steve Su  
+Pierson Wodarz   
+University of Illinois - Urbana, Champaign; MCS  
 
 ## Introduction
 The purpose of this project is to build an app which can give users recommended movies.  System one outputs recommended movies based on the user's desired genre.  System two gives the user recommended movies based on their movie ratings.  The app was built using the Shiny platform and the recommender algorithms used R's recommenderlab library.  The link to the app can be found here [Movie Recommender](https://steve303.shinyapps.io/RecommenderApp/).
@@ -137,7 +136,7 @@ result[1:10,]
 
 We see that this produces a different ranking and set of Top 10 recommendations compared to Proposal I. 
 
-### Decision
+### Discussion
 Ultimately we decided to go with Proposal I as the weighted rating made the most intuitive sense for presenting the 'top' movies within a certain genre. It makes sense that when a user selects a genre that we would present the 'top' movies within that genre. We don't want to present 'popular' movies as suggested in Proposal II, as the popular movies may not be well rated. For a user looking for recommendation, the assumption is that they would want to watch a movie which is both good and popular for that genre. In this case, the weighted rating returns those movies which could be considered 'top' by balancing the number of reviews with the ratings for the movies within the genre. 
 
 We implemented this by storing the `joined` table as a file and referencing the file in our Shiny app to make the predictions based on the user-selected genre and the weighted rankings for movies which fall into the selected genre. 
@@ -170,7 +169,7 @@ where:
   * $R{a,j}$ = rating of movie j by active user
   * $Set(i)$ = set of movies which are in the neighborhood of movie i
   
-### Decision
+### Discussion
 
 To evaluate the two algorithms we performed a 10 fold cross validation where in each fold 80% of the data was used for training and the remaining 20% was used for test.  RMSE was calculated for each fold.  Besides the UBCF and IBCF, a random selection algorithm was run for reference.  
 
@@ -337,10 +336,9 @@ barplot( height = c(mean(table_ubcf$RMSE), mean(table_n100$RMSE), mean(table_n20
 Even though UBCF performed better than IBCF, UBCF has some drawbacks.  These include, the whole data base has to be stored in memory and the similarity computation between each user in the data base and the active user cannot be done offline.  Just to compute similarity, the complexity will be O(n*m) where n is the number of users and m is the number of movies.  For a huge database this can be big strain our app.  To minimize this bottle neck we borrowed code from [Spachtholz](https://github.com/pspachtholz/BookRecommender).  It requires additional R scripts, cf_algorithm.R and similarity_measures.R which make computation more efficient by optimizing similarity calculations for sparse matrices.  The source can be found here, [Smartcat](https://smartcat.io/blog/data-science/improved-r-implementation-of-collaborative-filtering/). 
 
 ## Summary
-In the end our app was successfully deployed without much delay predicting recommendations.  There are several areas which could be improved for system two.  These include, providing more movie choices to rate, allowing the user to apply a filter, i.e. year, director.  Since our chosen UBCF algorithm did not perform significantly better than the random selection algorithm, this suggests there is room for improvement.  One idea is to use user profile data such as age, sex, profession to create more representative similarity scores between users.
+In the end, our app was successfully deployed without much delay predicting recommendations (system two) due in part by applying Splachtholz and Smartcat's code to compute the similarity matrix more efficiently.  There are several areas which could be improved.  These include, providing more movie choices to rate, allowing the user to apply a filter, i.e. year, director.  Since our chosen UBCF algorithm did not perform significantly better than the random selection algorithm, this suggests there is room for improvement.  One idea is to use user profile data such as age, sex, profession, etc. to create more representative similarity scores between users.  This can be especially helpful when the user has only ranked a few movies.  Currently if the active user only ranks one or two movies the calculated similarity values are pretty useless.  There is not enough data to calculate a meaningful similarity value.  This can demonstrated when using our app.  To demonstrate the opposite effect, we ranked many comedies with high scores and received mostly comedies as recommendations.    
     
     
-
 ## Resources  
 1.  [Quora: What algorithm does IMDB use for ranking the movies on its site?](https://www.quora.com/What-algorithm-does-IMDB-use-for-ranking-the-movies-on-its-site?share=1)
 2.  [demo code kaggle Spachtholz](https://www.kaggle.com/philippsp/book-recommender-collaborative-filtering-shiny)  
